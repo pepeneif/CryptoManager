@@ -213,7 +213,7 @@ try {
 // Migration: Add created_by column to all tables for audit
 const tablesToAddCreatedBy = [
   'grupos',
-  'empresas', 
+  'empresas',
   'cuentas',
   'clientes',
   'proveedores',
@@ -221,7 +221,10 @@ const tablesToAddCreatedBy = [
   'movimientos',
   'empresa_datos',
   'system_config',
-  'factura_items'
+  'factura_items',
+  'users',
+  'coins',
+  'exchange_rates'
 ]
 
 for (const table of tablesToAddCreatedBy) {

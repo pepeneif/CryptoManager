@@ -51,8 +51,8 @@ app.use('/api', gruposRoutes)
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`
   ╔═══════════════════════════════════════════╗
-  ║   CryptoManager API                      ║
-  ║   Puerto: ${PORT}                           ║
+  ║   CryptoManager API                       ║
+  ║   Puerto: ${PORT}                            ║
   ║   Entorno: Desarrollo                     ║
   ╚═══════════════════════════════════════════╝
   `)
