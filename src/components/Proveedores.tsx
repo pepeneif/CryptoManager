@@ -27,6 +27,29 @@ export default function Proveedores({ token }: Props) {
   const [searchTerm, setSearchTerm] = useState('')
   const [editandoId, setEditandoId] = useState<number | null>(null)
   const [editData, setEditData] = useState({ name: '', email: '', telefono: '', direccion: '', direccion_fisica: '', datos_fiscales: '' })
+  
+  // Sorting
+  type SortField = 'name' | 'email' | 'telefono' | 'direccion'
+  const [sortField, setSortField] = useState<SortField>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | 'default'>('default')
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (sortDirection === 'asc') setSortDirection('desc')
+      else if (sortDirection === 'desc') { setSortDirection('default'); setSortField('name') }
+      else setSortDirection('asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return ''
+    if (sortDirection === 'asc') return ' ↑'
+    if (sortDirection === 'desc') return ' ↓'
+    return ''
+  }
 
   // Guard: redirect if empresaId is missing
   useEffect(() => {
@@ -154,8 +177,24 @@ export default function Proveedores({ token }: Props) {
   const filteredProveedores = proveedores.filter(p =>
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (p.email && p.email.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (p.telefono && p.telefono.toLowerCase().includes(searchTerm.toLowerCase()))
+    (p.telefono && p.telefono.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (p.direccion && p.direccion.toLowerCase().includes(searchTerm.toLowerCase()))
   )
+
+  // Sorting
+  const sortedProveedores = [...filteredProveedores].sort((a, b) => {
+    if (sortDirection === 'default') {
+      return a.name.localeCompare(b.name)
+    }
+    const direction = sortDirection === 'desc' ? -1 : 1
+    switch (sortField) {
+      case 'name': return direction * a.name.localeCompare(b.name)
+      case 'email': return direction * (a.email || '').localeCompare(b.email || '')
+      case 'telefono': return direction * (a.telefono || '').localeCompare(b.telefono || '')
+      case 'direccion': return direction * (a.direccion || '').localeCompare(b.direccion || '')
+      default: return 0
+    }
+  })
 
   if (error && !proveedores.length) {
     return (
@@ -235,10 +274,15 @@ export default function Proveedores({ token }: Props) {
         {loading ? <p>Cargando...</p> : filteredProveedores.length === 0 ? <p>No hay proveedores{searchTerm ? ' que coincidan con la búsqueda' : '.'}</p> : (
           <table>
             <thead>
-              <tr><th>Nombre</th><th>Email</th><th>Teléfono</th><th>Acciones</th></tr>
+              <tr>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('name')}>Nombre{getSortIcon('name')}</th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('email')}>Email{getSortIcon('email')}</th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('telefono')}>Teléfono{getSortIcon('telefono')}</th>
+                <th style={{ color: 'var(--text-primary)' }}>Acciones</th>
+              </tr>
             </thead>
             <tbody>
-              {filteredProveedores.map((p) => (
+              {sortedProveedores.map((p) => (
                 <tr key={p.id}>
                   {editandoId === p.id ? (
                     <>

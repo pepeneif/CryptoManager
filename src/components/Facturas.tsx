@@ -76,7 +76,7 @@ export default function Facturas({ token }: Props) {
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [sortField, setSortField] = useState<SortField>('numero')
-  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | 'default'>('default')
 
   useEffect(() => {
     fetchFacturas()
@@ -295,35 +295,27 @@ export default function Facturas({ token }: Props) {
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       if (field === 'monto') {
-        // monto: desc → asc → default
+        // monto: desc -> asc -> default -> desc
         if (sortDirection === 'desc') setSortDirection('asc')
-        else if (sortDirection === 'asc') {
-          setSortDirection('default')
-          setSortField('numero')
-        }
+        else if (sortDirection === 'asc') { setSortDirection('default'); setSortField('numero') }
+        else setSortDirection('desc')
       } else {
-        // otros campos: asc → desc → default
+        // otros campos: asc -> desc -> default -> asc
         if (sortDirection === 'asc') setSortDirection('desc')
-        else if (sortDirection === 'desc') {
-          setSortDirection('default')
-          setSortField('numero')
-        }
+        else if (sortDirection === 'desc') { setSortDirection('default'); setSortField('numero') }
+        else setSortDirection('asc')
       }
     } else {
       setSortField(field)
+      // Default to desc for monto, asc for others
       setSortDirection(field === 'monto' ? 'desc' : 'asc')
     }
   }
 
   const getSortIcon = (field: SortField) => {
     if (sortField !== field) return ''
-    if (field === 'monto') {
-      if (sortDirection === 'desc') return ' ↓'
-      if (sortDirection === 'asc') return ' ↑'
-    } else {
-      if (sortDirection === 'asc') return ' ↑'
-      if (sortDirection === 'desc') return ' ↓'
-    }
+    if (sortDirection === 'asc') return ' ↑'
+    if (sortDirection === 'desc') return ' ↓'
     return ''
   }
 
@@ -339,7 +331,12 @@ export default function Facturas({ token }: Props) {
   )
 
   const sortedFacturas = [...filteredFacturas].sort((a, b) => {
-    const direction = sortDirection === 'default' ? 1 : (sortDirection === 'desc' ? -1 : 1)
+    // When default, always sort by numero ascending
+    if (sortDirection === 'default') {
+      return (parseInt(a.numero) || 0) - (parseInt(b.numero) || 0)
+    }
+    
+    const direction = sortDirection === 'desc' ? -1 : 1
     
     switch (sortField) {
       case 'numero':
