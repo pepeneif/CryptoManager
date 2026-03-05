@@ -229,10 +229,10 @@ export default function Clientes({ token }: Props) {
           <table>
             <thead>
               <tr>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('name')}>Nombre{getSortIcon('name')}</th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('email')}>Email{getSortIcon('email')}</th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('telefono')}>Teléfono{getSortIcon('telefono')}</th>
-                <th style={{ color: '#4a90d9' }}>Acciones</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('name')}>Nombre{getSortIcon('name')}</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('email')}>Email{getSortIcon('email')}</th>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('telefono')}>Teléfono{getSortIcon('telefono')}</th>
+                <th>Acciones</th>
               </tr>
             </thead>
             <tbody>

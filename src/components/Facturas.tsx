@@ -505,22 +505,22 @@ export default function Facturas({ token }: Props) {
           <table>
             <thead>
               <tr>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('numero')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('numero')}>
                   Número{getSortIcon('numero')}
                 </th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('cliente')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('cliente')}>
                   Cliente{getSortIcon('cliente')}
                 </th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('fecha')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('fecha')}>
                   Fecha Factura{getSortIcon('fecha')}
                 </th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('fecha_vencimiento')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('fecha_vencimiento')}>
                   Fecha Vencimiento{getSortIcon('fecha_vencimiento')}
                 </th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('monto')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('monto')}>
                   Monto{getSortIcon('monto')}
                 </th>
-                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('estado')}>
+                <th style={{ cursor: 'pointer' }} onClick={() => handleSort('estado')}>
                   Estado{getSortIcon('estado')}
                 </th>
                 <th style={{ color: 'var(--text-primary)' }}>Acciones</th>
