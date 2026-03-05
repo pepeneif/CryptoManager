@@ -202,11 +202,11 @@ export default function Referencias({ token }: Props) {
   return (
     <div className="dashboard" style={{ padding: '20px' }}>
       <div className="header" style={{ marginBottom: '30px', paddingBottom: '20px', borderBottom: '1px solid var(--border-color)' }}>
-        <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>Referencias</h1>
+        <h1 style={{ margin: 0, color: 'var(--text-primary)' }}>Preferencias</h1>
       </div>
 
       <div className="card" style={{ background: 'var(--bg-card)' }}>
-        <h2 style={{ color: 'var(--text-primary)', marginTop: 0 }}>Configuración de Referencias</h2>
+        <h2 style={{ color: 'var(--text-primary)', marginTop: 0 }}>Configuración de Preferencias</h2>
         <p style={{ color: 'var(--text-secondary)', marginBottom: '20px' }}>
           Configura la moneda base y la fuente de tipos de cambio
         </p>

@@ -17,6 +17,15 @@ interface Factura {
   proveedor_nombre?: string
 }
 
+interface Cliente {
+  id: number
+  nombre: string
+  email?: string
+}
+
+type SortField = 'numero' | 'cliente' | 'fecha' | 'fecha_vencimiento' | 'monto' | 'estado'
+type SortDirection = 'asc' | 'desc' | 'default'
+
 interface FacturaItem {
   id?: number
   descripcion: string
@@ -53,6 +62,7 @@ export default function Facturas({ token }: Props) {
   const [facturas, setFacturas] = useState<Factura[]>([])
   const [loading, setLoading] = useState(true)
   const [criptos, setCriptos] = useState<{id: string, name: string}[]>(DEFAULT_CRIPTOS)
+  const [clientes, setClientes] = useState<Cliente[]>([])
   const [items, setItems] = useState<FacturaItem[]>([{ descripcion: '', cantidad: 1, precio_unitario: 0, total: 0 }])
   const [newFactura, setNewFactura] = useState({
     tipo: 'purchase',
@@ -60,14 +70,18 @@ export default function Facturas({ token }: Props) {
     fecha: new Date().toISOString().split('T')[0],
     fecha_vencimiento: new Date().toISOString().split('T')[0],
     moneda: 'BTC',
+    cliente_id: null as number | null,
     descripcion: ''
   })
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortField, setSortField] = useState<SortField>('numero')
+  const [sortDirection, setSortDirection] = useState<SortDirection>('asc')
 
   useEffect(() => {
     fetchFacturas()
     fetchCriptos()
+    fetchClientes()
   }, [empresaId])
 
   // Generar número de factura automáticamente
@@ -92,16 +106,30 @@ export default function Facturas({ token }: Props) {
       if (response.ok) {
         const data = await response.json()
         if (Array.isArray(data) && data.length > 0) {
-          // Format: "Nombre - Symbol" for display
+          // Format: "Symbol - Nombre" (Symbol - Blockchain) for display
           const formatted = data.map((c: any) => ({
             id: c.simbolo || c.symbol,
-            name: `${c.nombre || c.name} - ${c.simbolo || c.symbol}`
+            name: `${c.simbolo || c.symbol} - ${c.nombre || c.name}`
           }))
           setCriptos(formatted)
         }
       }
     } catch (err) {
       console.error('Error fetching coins:', err)
+    }
+  }
+
+  const fetchClientes = async () => {
+    try {
+      const response = await fetch(`/api/empresas/${empresaId}/clientes`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (response.ok) {
+        const data = await response.json()
+        setClientes(data)
+      }
+    } catch (err) {
+      console.error('Error fetching clientes:', err)
     }
   }
 
@@ -190,7 +218,7 @@ export default function Facturas({ token }: Props) {
           })
         }
         
-        setNewFactura({ tipo: 'purchase', numero: '', fecha: new Date().toISOString().split('T')[0], fecha_vencimiento: new Date().toISOString().split('T')[0], moneda: 'BTC', descripcion: '' })
+        setNewFactura({ tipo: 'purchase', numero: '', fecha: new Date().toISOString().split('T')[0], fecha_vencimiento: new Date().toISOString().split('T')[0], moneda: 'BTC', cliente_id: null, descripcion: '' })
         setItems([{ descripcion: '', cantidad: 1, precio_unitario: 0, total: 0 }])
         setShowForm(false)
         fetchFacturas()
@@ -232,14 +260,104 @@ export default function Facturas({ token }: Props) {
     }
   }
 
+  const repetirFactura = async (factura: Factura) => {
+    const proximoNumero = facturas.length > 0 
+      ? (Math.max(...facturas.map(f => parseInt(f.numero) || 0)) + 1).toString()
+      : '1'
+    const fechaHoy = new Date().toISOString().split('T')[0]
+    
+    // Fetch items for this factura
+    try {
+      const itemsRes = await fetch(`/api/facturas/${factura.id}/items`, {
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      if (itemsRes.ok) {
+        const facturaItems = await itemsRes.json()
+        setItems(facturaItems)
+      }
+    } catch (err) {
+      console.error('Error fetching items:', err)
+      setItems([{ descripcion: '', cantidad: 1, precio_unitario: 0, total: 0 }])
+    }
+    
+    setNewFactura({
+      numero: proximoNumero,
+      cliente_id: factura.cliente_id || null,
+      fecha: fechaHoy,
+      fecha_vencimiento: fechaHoy,
+      moneda: factura.moneda,
+    })
+    setShowForm(true)
+  }
+
   const totalPendiente = facturas.filter(f => f.estado === 'unpaid').reduce((sum, f) => sum + f.monto, 0)
+
+  const handleSort = (field: SortField) => {
+    if (sortField === field) {
+      if (field === 'monto') {
+        // monto: desc → asc → default
+        if (sortDirection === 'desc') setSortDirection('asc')
+        else if (sortDirection === 'asc') {
+          setSortDirection('default')
+          setSortField('numero')
+        }
+      } else {
+        // otros campos: asc → desc → default
+        if (sortDirection === 'asc') setSortDirection('desc')
+        else if (sortDirection === 'desc') {
+          setSortDirection('default')
+          setSortField('numero')
+        }
+      }
+    } else {
+      setSortField(field)
+      setSortDirection(field === 'monto' ? 'desc' : 'asc')
+    }
+  }
+
+  const getSortIcon = (field: SortField) => {
+    if (sortField !== field) return ''
+    if (field === 'monto') {
+      if (sortDirection === 'desc') return ' ↓'
+      if (sortDirection === 'asc') return ' ↑'
+    } else {
+      if (sortDirection === 'asc') return ' ↑'
+      if (sortDirection === 'desc') return ' ↓'
+    }
+    return ''
+  }
 
   const filteredFacturas = facturas.filter(f =>
     f.numero.toLowerCase().includes(searchTerm.toLowerCase()) ||
     (f.descripcion && f.descripcion.toLowerCase().includes(searchTerm.toLowerCase())) ||
     (f.cliente_nombre && f.cliente_nombre.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (f.proveedor_nombre && f.proveedor_nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+    (f.proveedor_nombre && f.proveedor_nombre.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (f.fecha && f.fecha.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (f.fecha_vencimiento && f.fecha_vencimiento.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (f.estado && f.estado.toLowerCase().includes(searchTerm.toLowerCase())) ||
+    (f.monto && f.monto.toString().includes(searchTerm))
   )
+
+  const sortedFacturas = [...filteredFacturas].sort((a, b) => {
+    const direction = sortDirection === 'default' ? 1 : (sortDirection === 'desc' ? -1 : 1)
+    
+    switch (sortField) {
+      case 'numero':
+        return direction * (parseInt(a.numero) || 0 - parseInt(b.numero) || 0)
+      case 'cliente':
+        return direction * ((a.cliente_nombre || '').localeCompare(b.cliente_nombre || ''))
+      case 'fecha':
+        return direction * ((a.fecha || '').localeCompare(b.fecha || ''))
+      case 'fecha_vencimiento':
+        return direction * ((a.fecha_vencimiento || '').localeCompare(b.fecha_vencimiento || ''))
+      case 'monto':
+        return direction * (a.monto - b.monto)
+      case 'estado':
+        return direction * ((a.estado || '').localeCompare(b.estado || ''))
+      default:
+        return 0
+    }
+  })
 
   return (
     <div className="dashboard" style={{ padding: '20px' }}>
@@ -280,9 +398,25 @@ export default function Facturas({ token }: Props) {
               <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Moneda de pago</label>
               <select value={newFactura.moneda} onChange={(e) => setNewFactura({ ...newFactura, moneda: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
                 {criptos.map(c => (
-                  <option key={c.id} value={c.id}>{c.id} - {c.name}</option>
+                  <option key={c.id} value={c.id}>{c.name}</option>
                 ))}
                  <option selected disabled hidden>Seleccione Moneda</option>
+              </select>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
+            <div style={{ flex: '1 1 200px' }}>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Cliente</label>
+              <select 
+                value={newFactura.cliente_id || ''} 
+                onChange={(e) => setNewFactura({ ...newFactura, cliente_id: e.target.value ? Number(e.target.value) : null })} 
+                style={{ width: '100%', minWidth: '200px', padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}
+              >
+                <option value="">Seleccione Cliente</option>
+                {clientes.map(c => (
+                  <option key={c.id} value={c.id}>{c.nombre}</option>
+                ))}
               </select>
             </div>
           </div>
@@ -370,28 +504,52 @@ export default function Facturas({ token }: Props) {
             }}
           />
         </div>
-        {loading ? <p style={{ color: 'var(--text-primary)' }}>Cargando...</p> : filteredFacturas.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No hay facturas{searchTerm ? ' que coincidan con la búsqueda' : '.'}</p> : (
+        {loading ? <p style={{ color: 'var(--text-primary)' }}>Cargando...</p> : sortedFacturas.length === 0 ? <p style={{ color: 'var(--text-secondary)' }}>No hay facturas{searchTerm ? ' que coincidan con la búsqueda' : '.'}</p> : (
           <table>
             <thead>
-              <tr><th style={{ color: 'var(--text-primary)' }}>Tipo</th><th style={{ color: 'var(--text-primary)' }}>Número</th><th style={{ color: 'var(--text-primary)' }}>Fecha</th><th style={{ color: 'var(--text-primary)' }}>Monto</th><th style={{ color: 'var(--text-primary)' }}>Estado</th><th style={{ color: 'var(--text-primary)' }}>Acciones</th></tr>
+              <tr>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('numero')}>
+                  Número{getSortIcon('numero')}
+                </th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('cliente')}>
+                  Cliente{getSortIcon('cliente')}
+                </th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('fecha')}>
+                  Fecha Factura{getSortIcon('fecha')}
+                </th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('fecha_vencimiento')}>
+                  Fecha Vencimiento{getSortIcon('fecha_vencimiento')}
+                </th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('monto')}>
+                  Monto{getSortIcon('monto')}
+                </th>
+                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('estado')}>
+                  Estado{getSortIcon('estado')}
+                </th>
+                <th style={{ color: 'var(--text-primary)' }}>Acciones</th>
+              </tr>
             </thead>
             <tbody>
-              {filteredFacturas.map((f) => (
+              {sortedFacturas.map((f) => (
                 <tr key={f.id}>
-                  <td><span className="badge" style={{ background: f.tipo === 'sales' ? '#4caf50' : '#ff9800' }}>{f.tipo === 'sales' ? 'Venta' : 'Compra'}</span></td>
                   <td style={{ color: 'var(--text-primary)' }}>{f.numero}</td>
+                  <td style={{ color: 'var(--text-primary)' }}>{f.cliente_nombre || f.proveedor_nombre || '-'}</td>
                   <td style={{ color: 'var(--text-primary)' }}>{f.fecha}</td>
+                  <td style={{ color: 'var(--text-primary)' }}>{f.fecha_vencimiento || '-'}</td>
                   <td style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{f.moneda} {f.monto.toLocaleString()}</td>
                   <td>
-                    <span className="badge" style={{ background: f.estado === 'paid' ? '#4caf50' : '#f44336' }}>
-                      {f.estado === 'paid' ? 'Pagado' : 'Pendiente'}
+                    <span className="badge" style={{ background: f.estado === 'paid' ? '#4caf50' : f.estado === 'cancelled' ? '#9e9e9e' : '#f44336' }}>
+                      {f.estado === 'paid' ? 'Pagada' : f.estado === 'cancelled' ? 'Cancelada' : 'Pendiente'}
                     </span>
                   </td>
                   <td>
                     {f.estado === 'unpaid' && (
-                      <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8em', marginRight: '5px' }} onClick={() => cambiarEstado(f.id, 'paid')}>Pagar</button>
+                      <>
+                        <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8em', marginRight: '5px' }} onClick={() => cambiarEstado(f.id, 'paid')}>Pagada</button>
+                        <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8em', marginRight: '5px', background: '#9e9e9e' }} onClick={() => cambiarEstado(f.id, 'cancelled')}>Cancelada</button>
+                        <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8em', background: '#3498db' }} onClick={() => repetirFactura(f)}>Repetir</button>
+                      </>
                     )}
-                    <button className="btn btn-secondary" style={{ padding: '5px 10px', fontSize: '0.8em' }} onClick={() => eliminarFactura(f.id)}>Eliminar</button>
                   </td>
                 </tr>
               ))}

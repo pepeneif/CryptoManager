@@ -33,7 +33,7 @@ router.get('/empresas/:empresaId/facturas', (req: Request, res: Response) => {
   }
   
   const facturas = db.prepare(`
-    SELECT f.*, c.name as cliente_nombre, p.name as proveedor_nombre
+    SELECT f.*, c.nombre as cliente_nombre, p.nombre as proveedor_nombre
     FROM facturas f
     LEFT JOIN clientes c ON f.cliente_id = c.id
     LEFT JOIN proveedores p ON f.proveedor_id = p.id

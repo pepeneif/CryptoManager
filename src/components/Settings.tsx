@@ -30,7 +30,7 @@ export default function Settings({ token }: Props) {
     { key: 'users', path: `/usuarios/${empresaId}` },
     { key: 'groups', path: `/grupos/${empresaId}` },
     { key: 'coins', path: `/coins-tokens/${empresaId}` },
-    { key: 'references', path: `/referencias/${empresaId}` },
+    { key: 'preferencias', path: `/preferencias/${empresaId}` },
   ]
 
   return (

@@ -16,7 +16,7 @@ import Programacion from './components/Programacion'
 import DatosEmpresa from './components/DatosEmpresa'
 import Grupos from './components/Grupos'
 import CoinsTokens from './components/CoinsTokens'
-import Referencias from './components/Referencias'
+import Preferencias from './components/Preferencias'
 import Reportes from './components/Reportes'
 import Pagos from './components/Pagos'
 
@@ -101,8 +101,8 @@ function App() {
           element={token ? <Layout token={token}><CoinsTokens token={token} /></Layout> : <Navigate to="/login" />} 
         />
         <Route 
-          path="/referencias/:empresaId" 
-          element={token ? <Layout token={token}><Referencias token={token} /></Layout> : <Navigate to="/login" />} 
+          path="/preferencias/:empresaId" 
+          element={token ? <Layout token={token}><Preferencias token={token} /></Layout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/reportes/:empresaId" 
