@@ -275,10 +275,10 @@ export default function Proveedores({ token }: Props) {
           <table>
             <thead>
               <tr>
-                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('name')}>Nombre{getSortIcon('name')}</th>
-                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('email')}>Email{getSortIcon('email')}</th>
-                <th style={{ color: 'var(--text-primary)', cursor: 'pointer' }} onClick={() => handleSort('telefono')}>Teléfono{getSortIcon('telefono')}</th>
-                <th style={{ color: 'var(--text-primary)' }}>Acciones</th>
+                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('name')}>Nombre{getSortIcon('name')}</th>
+                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('email')}>Email{getSortIcon('email')}</th>
+                <th style={{ color: '#4a90d9', cursor: 'pointer' }} onClick={() => handleSort('telefono')}>Teléfono{getSortIcon('telefono')}</th>
+                <th style={{ color: '#4a90d9' }}>Acciones</th>
               </tr>
             </thead>
             <tbody>
