@@ -11,13 +11,14 @@ import Movimientos from './components/Movimientos'
 import Transfer from './components/Transfer'
 import Usuarios from './components/Usuarios'
 import Settings from './components/Settings'
-import Pagos from './components/Pagos'
+import Tasks from './components/Tasks'
 import Programacion from './components/Programacion'
 import DatosEmpresa from './components/DatosEmpresa'
 import Grupos from './components/Grupos'
 import CoinsTokens from './components/CoinsTokens'
 import Referencias from './components/Referencias'
 import Reportes from './components/Reportes'
+import Pagos from './components/Pagos'
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem('token'))
@@ -74,6 +75,10 @@ function App() {
         <Route 
           path="/settings/:empresaId" 
           element={token ? <Layout token={token}><Settings token={token} /></Layout> : <Navigate to="/login" />} 
+        />
+        <Route 
+          path="/tasks/:empresaId" 
+          element={token ? <Layout token={token}><Tasks token={token} /></Layout> : <Navigate to="/login" />} 
         />
         <Route 
           path="/pagos/:empresaId" 

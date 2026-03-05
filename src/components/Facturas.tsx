@@ -58,6 +58,7 @@ export default function Facturas({ token }: Props) {
     tipo: 'purchase',
     numero: '',
     fecha: new Date().toISOString().split('T')[0],
+    fecha_vencimiento: new Date().toISOString().split('T')[0],
     moneda: 'BTC',
     descripcion: ''
   })
@@ -69,23 +70,38 @@ export default function Facturas({ token }: Props) {
     fetchCriptos()
   }, [empresaId])
 
+  // Generar número de factura automáticamente
+  useEffect(() => {
+    if (showForm) {
+      const proximoNumero = facturas.length > 0 
+        ? (Math.max(...facturas.map(f => parseInt(f.numero) || 0)) + 1).toString()
+        : '1'
+      setNewFactura(prev => ({ 
+        ...prev, 
+        numero: proximoNumero,
+        fecha_vencimiento: prev.fecha_vencimiento || prev.fecha
+      }))
+    }
+  }, [showForm, facturas])
+
   const fetchCriptos = async () => {
     try {
-      const response = await fetch('/api/admin/system-config', {
+      const response = await fetch('/api/coins', {
         headers: { Authorization: `Bearer ${token}` },
       })
       if (response.ok) {
         const data = await response.json()
-        if (data.active_coins) {
-          const activeCoins = JSON.parse(data.active_coins)
-          const filtered = DEFAULT_CRIPTOS.filter(c => activeCoins.includes(c.id))
-          if (filtered.length > 0) {
-            setCriptos(filtered)
-          }
+        if (Array.isArray(data) && data.length > 0) {
+          // Format: "Nombre - Symbol" for display
+          const formatted = data.map((c: any) => ({
+            id: c.simbolo || c.symbol,
+            name: `${c.nombre || c.name} - ${c.simbolo || c.symbol}`
+          }))
+          setCriptos(formatted)
         }
       }
     } catch (err) {
-      console.error('Error fetching config:', err)
+      console.error('Error fetching coins:', err)
     }
   }
 
@@ -174,7 +190,7 @@ export default function Facturas({ token }: Props) {
           })
         }
         
-        setNewFactura({ tipo: 'purchase', numero: '', fecha: new Date().toISOString().split('T')[0], moneda: 'BTC', descripcion: '' })
+        setNewFactura({ tipo: 'purchase', numero: '', fecha: new Date().toISOString().split('T')[0], fecha_vencimiento: new Date().toISOString().split('T')[0], moneda: 'BTC', descripcion: '' })
         setItems([{ descripcion: '', cantidad: 1, precio_unitario: 0, total: 0 }])
         setShowForm(false)
         fetchFacturas()
@@ -247,17 +263,28 @@ export default function Facturas({ token }: Props) {
         <h2 style={{ margin: '0 0 15px 0', color: 'var(--text-primary)' }}>Nueva Factura</h2>
         <form onSubmit={crearFactura}>
           <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', marginBottom: '15px' }}>
-            <select value={newFactura.tipo} onChange={(e) => setNewFactura({ ...newFactura, tipo: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
-              <option value="purchase">Compra</option>
-              <option value="sales">Venta</option>
-            </select>
-            <input type="text" value={newFactura.numero} onChange={(e) => setNewFactura({ ...newFactura, numero: e.target.value })} placeholder="Número" style={{ width: '100px', padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} required />
-            <input type="date" value={newFactura.fecha} onChange={(e) => setNewFactura({ ...newFactura, fecha: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} />
-            <select value={newFactura.moneda} onChange={(e) => setNewFactura({ ...newFactura, moneda: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
-              {criptos.map(c => (
-                <option key={c.id} value={c.id}>{c.id} - {c.name}</option>
-              ))}
-            </select>
+            
+            <div>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Número</label>
+              <input type="text" value={newFactura.numero} placeholder="Número" style={{ width: '100px', padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} readOnly required />
+            </div>
+            <div>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Fecha de factura</label>
+              <input type="date" value={newFactura.fecha} onChange={(e) => setNewFactura({ ...newFactura, fecha: e.target.value, fecha_vencimiento: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} />
+            </div>
+            <div>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Fecha de pago</label>
+              <input type="date" value={newFactura.fecha_vencimiento} onChange={(e) => setNewFactura({ ...newFactura, fecha_vencimiento: e.target.value })} placeholder="Fecha Límite Pago" style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }} required />
+            </div>
+            <div>
+              <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em', display: 'block', marginBottom: '5px' }}>Moneda de pago</label>
+              <select value={newFactura.moneda} onChange={(e) => setNewFactura({ ...newFactura, moneda: e.target.value })} style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}>
+                {criptos.map(c => (
+                  <option key={c.id} value={c.id}>{c.id} - {c.name}</option>
+                ))}
+                 <option selected disabled hidden>Seleccione Moneda</option>
+              </select>
+            </div>
           </div>
 
           <div style={{ marginBottom: '15px' }}>
@@ -298,9 +325,12 @@ export default function Facturas({ token }: Props) {
                 </div>
                 <div style={{ flex: 1 }}>
                   <label style={{ color: 'var(--text-secondary)', fontSize: '0.8em' }}>Total</label>
-                  <div style={{ padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)', fontWeight: 'bold' }}>
-                    {item.total.toLocaleString()}
-                  </div>
+                  <input
+                    type="text"
+                    value={item.total.toLocaleString()}
+                    readOnly
+                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid var(--border-color)', background: 'var(--bg-input)', color: 'var(--text-primary)' }}
+                  />
                 </div>
                 <button type="button" onClick={() => removeItem(index)} style={{ padding: '10px', background: '#e74c3c', color: 'white', border: 'none', borderRadius: '5px', cursor: 'pointer' }}>✕</button>
               </div>
@@ -309,8 +339,8 @@ export default function Facturas({ token }: Props) {
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '15px', paddingTop: '15px', borderTop: '1px solid var(--border-color)' }}>
-            <div style={{ fontSize: '1.2em', color: 'var(--text-primary)' }}>
-              <strong>Total: {getTotal().toLocaleString()} {newFactura.moneda}</strong>
+            <div style={{ color: 'var(--text-primary)' }}>
+              Total: {getTotal().toLocaleString()} {newFactura.moneda}
             </div>
             <div style={{ display: 'flex', gap: '10px' }}>
               <button type="button" className="btn btn-secondary" style={{ fontSize: '0.9em', padding: '8px 16px', width: 'auto' }} onClick={() => { setShowForm(false); setItems([{ descripcion: '', cantidad: 1, precio_unitario: 0, total: 0 }]) }}>Cancelar</button>

@@ -179,11 +179,11 @@ db.exec(`
 `)
 
 // Create default user if not exists
-const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get('administrator')
+const existingUser = db.prepare('SELECT * FROM users WHERE username = ?').get('admin')
 if (!existingUser) {
-  const hashedPassword = bcrypt.hashSync('123', 10)
-  db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run('administrator', hashedPassword, 'admin')
-  console.log('✅ Default user created: administrator / 123')
+  const hashedPassword = bcrypt.hashSync('admin', 10)
+  db.prepare('INSERT INTO users (username, password, role) VALUES (?, ?, ?)').run('admin', hashedPassword, 'admin')
+  console.log('✅ Default user created: admin / admin')
 }
 
 console.log('✅ Database initialized')

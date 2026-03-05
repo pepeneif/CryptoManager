@@ -44,6 +44,61 @@ export default function Wallets({ token }: WalletsProps) {
   })
   const [showForm, setShowForm] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [sortColumn, setSortColumn] = useState<'name' | 'tipo' | 'moneda' | 'wallet_address' | 'balance'>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc' | 'default'>('default')
+
+  const handleSort = (column: typeof sortColumn) => {
+    if (sortColumn === column) {
+      if (column === 'balance') {
+        // Balance: desc -> asc -> default
+        if (sortDirection === 'desc') setSortDirection('asc')
+        else if (sortDirection === 'asc') { setSortDirection('default'); setSortColumn('name') }
+        else setSortDirection('desc')
+      } else {
+        // Others: asc -> desc -> default
+        if (sortDirection === 'asc') setSortDirection('desc')
+        else if (sortDirection === 'desc') { setSortDirection('default'); setSortColumn('name') }
+        else setSortDirection('asc')
+      }
+    } else {
+      setSortColumn(column)
+      // Default to desc for balance, asc for others
+      setSortDirection(column === 'balance' ? 'desc' : 'asc')
+    }
+  }
+
+  const getSortIcon = (column: typeof sortColumn) => {
+    if (sortColumn !== column) return ''
+    if (sortDirection === 'asc') return ' ↑'
+    if (sortDirection === 'desc') return ' ↓'
+    return ''
+  }
+
+  // Sort cuentas
+  const sortedCuentas = [...cuentas].sort((a, b) => {
+    if (sortDirection === 'default') {
+      return a.name.localeCompare(b.name)
+    }
+    
+    let valA: any, valB: any
+    switch (sortColumn) {
+      case 'name': valA = a.name || ''; valB = b.name || ''; break
+      case 'tipo': valA = a.tipo || ''; valB = b.tipo || ''; break
+      case 'moneda': valA = a.moneda || ''; valB = b.moneda || ''; break
+      case 'wallet_address': valA = a.wallet_address || ''; valB = b.wallet_address || ''; break
+      case 'balance': valA = a.balance || 0; valB = b.balance || 0; break
+      default: return 0
+    }
+    
+    if (typeof valA === 'string') {
+      return sortDirection === 'asc' ? valA.localeCompare(valB) : valB.localeCompare(valA)
+    }
+    // For numbers (balance)
+    if (sortColumn === 'balance') {
+      return sortDirection === 'asc' ? valA - valB : valB - valA
+    }
+    return 0
+  })
 
   // Load enabled coins from API
   useEffect(() => {
@@ -109,9 +164,10 @@ export default function Wallets({ token }: WalletsProps) {
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
-          ...newWallet,
-          // Si hay una moneda seleccionada, usarla; si no, usar el symbol de la coin
-          moneda: newWallet.moneda || coins.find(c => String(c.id) === newWallet.tipo)?.symbol || ''
+          name: newWallet.name,
+          tipo: newWallet.tipo,
+          moneda: newWallet.moneda || coins.find(c => String(c.id) === newWallet.tipo)?.symbol || '',
+          wallet_address: newWallet.address // Map address to wallet_address
         }),
       })
       if (response.ok) {
@@ -125,10 +181,13 @@ export default function Wallets({ token }: WalletsProps) {
 
   const totalBalance = cuentas.reduce((sum, c) => sum + c.balance, 0)
 
-  const filteredCuentas = cuentas.filter(cuenta =>
+  const filteredCuentas = sortedCuentas.filter(cuenta =>
+    cuenta.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     cuenta.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cuenta.tipo.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    cuenta.moneda.toLowerCase().includes(searchTerm.toLowerCase())
+    (cuenta.wallet_address || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    cuenta.moneda.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (coins.find(c => String(c.id) === cuenta.tipo)?.name.toLowerCase() + coins.find(c => String(c.id) === cuenta.tipo)?.symbol.toLowerCase() + coins.find(c => String(c.id) === cuenta.tipo)?.blockchain.toLowerCase()).includes(searchTerm.toLowerCase()) ||
+    cuenta.balance.toString().includes(searchTerm)
   )
 
   return (
@@ -180,7 +239,7 @@ export default function Wallets({ token }: WalletsProps) {
           >
             {coins.map((coin) => (
               <option key={coin.id} value={coin.id}>
-                {coin.name} ({coin.symbol}) - {coin.blockchain} {coin.is_custom ? '[Custom]' : ''}
+                {coin.name} ({coin.symbol}) - {coin.blockchain}
               </option>
             ))}
           </select>
@@ -219,10 +278,10 @@ export default function Wallets({ token }: WalletsProps) {
           <table>
             <thead>
               <tr>
-                <th>Nombre</th>
-                <th>Blockchain</th>
-                <th>Moneda</th>
-                <th>Balance</th>
+                <th onClick={() => handleSort('name')} style={{ cursor: 'pointer' }}>Nombre{getSortIcon('name')}</th>
+                <th onClick={() => handleSort('wallet_address')} style={{ cursor: 'pointer' }}>Wallet address{getSortIcon('wallet_address')}</th>
+                <th onClick={() => handleSort('moneda')} style={{ cursor: 'pointer' }}>Moneda{getSortIcon('moneda')}</th>
+                <th onClick={() => handleSort('balance')} style={{ cursor: 'pointer' }}>Balance{getSortIcon('balance')}</th>
               </tr>
             </thead>
             <tbody>
@@ -230,11 +289,9 @@ export default function Wallets({ token }: WalletsProps) {
                 <tr key={cuenta.id} onClick={() => navigate(`/movimientos/${empresaId}/${cuenta.id}`)} style={{ cursor: 'pointer' }}>
                   <td>{cuenta.name}</td>
                   <td>
-                    <span className="badge">
-                      {coins.find(c => String(c.id) === cuenta.tipo)?.name || cuenta.tipo}
-                    </span>
+                    {cuenta.wallet_address}
                   </td>
-                  <td>{cuenta.moneda}</td>
+                  <td>{coins.find(c => String(c.id) === cuenta.tipo) ? `${coins.find(c => String(c.id) === cuenta.tipo).name} ${coins.find(c => String(c.id) === cuenta.tipo).symbol} - ${coins.find(c => String(c.id) === cuenta.tipo).blockchain}` : cuenta.moneda}</td>
                   <td style={{ fontWeight: 'bold' }}>
                     {cuenta.moneda === 'USD' || cuenta.moneda === 'EUR' || cuenta.moneda === 'AED'
                       ? `${cuenta.moneda} ${cuenta.balance.toLocaleString()}`

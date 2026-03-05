@@ -18,12 +18,12 @@ export default function Layout({ children, token }: LayoutProps) {
     { path: `/proveedores/${empresaId}`, label: 'Proveedores', icon: '3.' },
     { path: `/facturas/${empresaId}`, label: 'Facturas', icon: '4.' },
     { path: `/pagos/${empresaId}`, label: 'Pagos', icon: '5.' },
-    { path: `/autorizaciones/${empresaId}`, label: 'Autorizaciones', icon: '6.' },
+    { path: `/tasks/${empresaId}`, label: 'Tasks', icon: '6.' },
     { path: `/reportes/${empresaId}`, label: 'Reportes', icon: '7.' },
   ] : []
 
   const bottomMenuItems = [
-    { path: `/settings/${empresaId || ''}`, label: 'Settings', icon: '0.' },
+    { path: `/settings/${empresaId || ''}`, label: 'Configuracion', icon: '0.' },
   ]
 
   const currentPath = window.location.pathname
@@ -51,7 +51,7 @@ export default function Layout({ children, token }: LayoutProps) {
           justifyContent: collapsed ? 'center' : 'space-between',
           cursor: 'pointer'
         }} onClick={() => navigate('/')}>
-          {!collapsed && <span style={{ fontWeight: 'bold', color: '#4a90d9' }}>Manager.io</span>}
+          {!collapsed && <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>CryptoManager</span>}
           <button 
             onClick={(e) => { e.stopPropagation(); setCollapsed(!collapsed) }}
             style={{

@@ -65,7 +65,7 @@ export default function Login({ onLogin }: LoginProps) {
         </button>
       </form>
       <p style={{ marginTop: '20px', color: '#666', fontSize: '0.9em' }}>
-        Demo: administrator / 123
+        Demo: admin / admin
       </p>
     </div>
   )
