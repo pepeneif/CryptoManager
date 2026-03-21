@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
+import { ConnectButton } from '@rainbow-me/rainbowkit'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -124,13 +125,166 @@ export default function Layout({ children, token }: LayoutProps) {
 
         {/* User */}
         <div style={{
-          padding: '15px',
+          padding: '10px 5px',
           borderTop: '1px solid var(--border-color)',
           textAlign: 'center',
           color: '#666',
-          fontSize: '0.8em'
+          fontSize: '0.8em',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: '10px',
+          width: '100%',
+          boxSizing: 'border-box'
         }}>
           {collapsed ? '' : 'administrator'}
+          {!collapsed && (
+            <div style={{ marginTop: '10px', width: '100%', padding: '0 5px', boxSizing: 'border-box', overflow: 'hidden', display: 'flex', justifyContent: 'center' }}>
+              <ConnectButton.Custom>
+                {({
+                  account,
+                  chain,
+                  openAccountModal,
+                  openChainModal,
+                  openConnectModal,
+                  authenticationStatus,
+                  mounted,
+                }) => {
+                  const ready = mounted && authenticationStatus !== 'loading';
+                  const connected =
+                    ready &&
+                    account &&
+                    chain &&
+                    (!authenticationStatus ||
+                      authenticationStatus === 'authenticated');
+
+                  return (
+                    <div
+                      {...(!ready && {
+                        'aria-hidden': true,
+                        style: {
+                          opacity: 0,
+                          pointerEvents: 'none',
+                          userSelect: 'none',
+                        },
+                      })}
+                    >
+                      {(() => {
+                        if (!connected) {
+                          return (
+                            <button 
+                              onClick={openConnectModal} 
+                              type="button"
+                              style={{
+                                width: '100%',
+                                padding: '8px 16px',
+                                background: 'var(--bg-primary, #fff)',
+                                color: 'var(--text-primary)',
+                                border: '1px solid var(--border-color, #e0e0e0)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500',
+                                display: 'flex',
+                                justifyContent: 'center',
+                                alignItems: 'center'
+                              }}
+                            >
+                              Connect Wallet
+                            </button>
+                          );
+                        }
+
+                        if (chain.unsupported) {
+                          return (
+                            <button 
+                              onClick={openChainModal} 
+                              type="button"
+                              style={{
+                                width: '100%',
+                                padding: '8px 16px',
+                                background: 'var(--danger-color, #dc3545)',
+                                color: 'white',
+                                border: 'none',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                fontSize: '14px',
+                                fontWeight: '500'
+                              }}
+                            >
+                              Wrong network
+                            </button>
+                          );
+                        }
+
+                        return (
+                          <div style={{ display: 'flex', gap: '8px', maxWidth: '100%' }}>
+                            <button
+                              onClick={openChainModal}
+                              style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                padding: '8px',
+                                background: 'var(--bg-primary, #fff)',
+                                border: '1px solid var(--border-color, #e0e0e0)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)'
+                              }}
+                              type="button"
+                            >
+                              {chain.hasIcon && (
+                                <div
+                                  style={{
+                                    background: chain.iconBackground,
+                                    width: 16,
+                                    height: 16,
+                                    borderRadius: 999,
+                                    overflow: 'hidden',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  {chain.iconUrl && (
+                                    <img
+                                      alt={chain.name ?? 'Chain icon'}
+                                      src={chain.iconUrl}
+                                      style={{ width: 16, height: 16 }}
+                                    />
+                                  )}
+                                </div>
+                              )}
+                            </button>
+
+                            <button
+                              onClick={openAccountModal}
+                              type="button"
+                              style={{
+                                padding: '8px 12px',
+                                background: 'var(--bg-primary, #fff)',
+                                border: '1px solid var(--border-color, #e0e0e0)',
+                                borderRadius: '4px',
+                                cursor: 'pointer',
+                                color: 'var(--text-primary)',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                                flex: 1,
+                                fontSize: '13px'
+                              }}
+                            >
+                              {account.displayName}
+                            </button>
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  );
+                }}
+              </ConnectButton.Custom>
+            </div>
+          )}
         </div>
       </div>
 
