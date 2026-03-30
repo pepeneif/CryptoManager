@@ -3,7 +3,7 @@
 
 export const config = {
   // Server
-  PORT: Number(process.env.PORT) || 3001,
+  PORT: Number(process.env.PORT) || 3011,
   NODE_ENV: process.env.NODE_ENV || 'development',
   
   // Security
@@ -13,7 +13,7 @@ export const config = {
   DATABASE_URL: process.env.DATABASE_URL || './data/manager.db',
   
   // CORS
-  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3000',
+  FRONTEND_URL: process.env.FRONTEND_URL || 'http://localhost:3010',
 }
 
 // Validate required config in production
